@@ -10,10 +10,13 @@ import { AccountsView } from './views/AccountsView'
 import { CategoriesView } from './views/CategoriesView'
 import { SettingsView } from './views/SettingsView'
 import { useAppStore } from './store/useAppStore'
+import { useTheme } from './hooks/useTheme'
 
 export const App: React.FC = () => {
   const { activeTab, loadAllData } = useAppStore()
   const [isManualModalOpen, setIsManualModalOpen] = useState(false)
+  // 引入主题 hook，保证 DOM class 与用户偏好同步
+  useTheme()
 
   useEffect(() => {
     loadAllData()
@@ -49,20 +52,20 @@ export const App: React.FC = () => {
 
   return (
     <ToastProvider>
-      <div className="flex h-screen w-screen overflow-hidden font-sans bg-white text-gray-900">
+      <div className="flex h-screen w-screen overflow-hidden font-sans bg-white dark:bg-[#0b0e14] text-gray-900 dark:text-gray-100">
         <Sidebar onOpenManualModal={() => setIsManualModalOpen(true)} />
 
         <main className="flex-1 overflow-hidden flex flex-col">
           {/* Title bar — top padding clears macOS traffic light buttons */}
-          <div className="pt-8 pb-2 px-5 border-b border-gray-100 app-drag-region flex items-center justify-between shrink-0 bg-white">
-            <span className="text-[13px] font-medium text-gray-600">{tabTitles[activeTab]}</span>
-            <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
+          <div className="pt-8 pb-2 px-5 border-b border-gray-100 dark:border-[#232838] app-drag-region flex items-center justify-between shrink-0 bg-white dark:bg-[#161a23]">
+            <span className="text-[13px] font-medium text-gray-600 dark:text-gray-400">{tabTitles[activeTab]}</span>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               本地加密
             </span>
           </div>
 
-          <div className="flex-1 overflow-hidden bg-gray-50/50">{renderActiveView()}</div>
+          <div className="flex-1 overflow-hidden bg-gray-50/50 dark:bg-[#0b0e14]">{renderActiveView()}</div>
         </main>
 
         <DetailPanel />

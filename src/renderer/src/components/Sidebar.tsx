@@ -34,14 +34,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenManualModal }) => {
   })
 
   return (
-    <aside className="w-56 bg-white border-r border-gray-100 flex flex-col shrink-0 select-none">
+    <aside className="w-56 bg-white dark:bg-[#161a23] border-r border-gray-100 dark:border-[#232838] flex flex-col shrink-0 select-none">
       {/* Brand — pushed down below macOS traffic light buttons */}
       <div className="pt-8 pb-1 px-4 app-drag-region shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md bg-blue-500 flex items-center justify-center">
             <Wallet className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-[14px] font-semibold text-gray-900">FinanceBook</span>
+          <span className="text-[14px] font-semibold text-gray-900 dark:text-gray-100">FinanceBook</span>
         </div>
       </div>
 
@@ -68,14 +68,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenManualModal }) => {
               className={`nav-item w-full flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] ${
                 isActive
                   ? 'nav-item-active'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1d212c]'
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} strokeWidth={2} />
+              <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`} strokeWidth={2} />
               <span className="flex-1 text-left">{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
                 <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded tabular-nums ${
-                  isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+                  isActive ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400'
                 }`}>
                   {item.badge > 999 ? '999+' : item.badge}
                 </span>
@@ -86,10 +86,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenManualModal }) => {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-gray-50 shrink-0">
+      <div className="p-3 border-t border-gray-50 dark:border-[#232838] shrink-0">
         <div className="flex items-center gap-2 px-2 py-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" strokeWidth={2} />
-          <span className="text-[11px] text-gray-400">数据本地加密存储</span>
+          <span className="text-[11px] text-gray-400 dark:text-gray-500">数据本地加密存储</span>
         </div>
       </div>
     </aside>

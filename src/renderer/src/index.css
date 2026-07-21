@@ -35,6 +35,70 @@
     --ring: 217 91% 60%;
 
     --radius: 0.5rem;
+
+    /* App-specific surface tokens */
+    --app-bg: #f7f8fa;
+    --app-surface: #ffffff;
+    --app-surface-hover: #f4f5f7;
+    --app-border: #e8eaed;
+    --app-border-soft: #f0f1f3;
+    --app-text: #111827;
+    --app-text-muted: #6b7280;
+    --app-text-faint: #9ca3af;
+    --app-text-placeholder: #9ca3af;
+    --app-overlay: rgba(0, 0, 0, 0.2);
+    --app-scrollbar: rgba(0, 0, 0, 0.15);
+    --app-scrollbar-hover: rgba(0, 0, 0, 0.25);
+    --app-selection-bg: rgba(59, 130, 246, 0.15);
+    --app-selection-fg: #1e3a8a;
+  }
+
+  .dark {
+    /* Dark theme — inspired by Linear / Vercel dark mode */
+    --background: 222 47% 9%;
+    --foreground: 210 20% 92%;
+
+    --muted: 217 19% 17%;
+    --muted-foreground: 215 16% 65%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 20% 92%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 20% 92%;
+
+    --border: 217 19% 20%;
+    --input: 217 19% 20%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 19% 17%;
+    --secondary-foreground: 210 20% 92%;
+
+    --accent: 217 19% 17%;
+    --accent-foreground: 210 20% 92%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --ring: 217 91% 60%;
+
+    /* App-specific surface tokens */
+    --app-bg: #0b0e14;
+    --app-surface: #161a23;
+    --app-surface-hover: #1d212c;
+    --app-border: #232838;
+    --app-border-soft: #1d212c;
+    --app-text: #e5e7eb;
+    --app-text-muted: #9ca3af;
+    --app-text-faint: #6b7280;
+    --app-text-placeholder: #4b5563;
+    --app-overlay: rgba(0, 0, 0, 0.5);
+    --app-scrollbar: rgba(255, 255, 255, 0.12);
+    --app-scrollbar-hover: rgba(255, 255, 255, 0.2);
+    --app-selection-bg: rgba(59, 130, 246, 0.3);
+    --app-selection-fg: #bfdbfe;
   }
 }
 
@@ -46,11 +110,12 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
-  background-color: #ffffff;
-  color: #1a1a1a;
+  background-color: var(--app-bg);
+  color: var(--app-text);
   user-select: none;
   overflow: hidden;
   letter-spacing: -0.003em;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -77,26 +142,26 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--app-scrollbar);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--app-scrollbar-hover);
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
 ::selection {
-  background: rgba(59, 130, 246, 0.15);
-  color: #1e3a8a;
+  background: var(--app-selection-bg);
+  color: var(--app-selection-fg);
 }
 
 @layer components {
   /* Card */
   .card {
-    background: #ffffff;
-    border: 1px solid #e8eaed;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
     border-radius: 10px;
   }
 
@@ -104,7 +169,7 @@ h1, h2, h3, h4, h5, h6 {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .card-hover:hover {
-    border-color: #d1d5db;
+    border-color: var(--app-border);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
 
@@ -127,14 +192,14 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Secondary button */
   .btn-secondary {
-    background: #f4f5f7;
-    color: #374151;
-    border: 1px solid #e8eaed;
+    background: var(--app-surface-hover);
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
     transition: background 0.12s ease, border-color 0.12s ease;
   }
   .btn-secondary:hover {
-    background: #ebebed;
-    border-color: #d1d5db;
+    background: var(--app-border-soft);
+    border-color: var(--app-border);
   }
 
   /* Ghost button */
@@ -142,13 +207,14 @@ h1, h2, h3, h4, h5, h6 {
     transition: background 0.12s ease;
   }
   .btn-ghost:hover {
-    background: #f4f5f7;
+    background: var(--app-surface-hover);
   }
 
   /* Input */
   .input-field {
-    background: #ffffff;
-    border: 1px solid #e8eaed;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    color: var(--app-text);
     transition: border-color 0.12s ease, box-shadow 0.12s ease;
   }
   .input-field:focus {
@@ -157,7 +223,7 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
   .input-field::placeholder {
-    color: #9ca3af;
+    color: var(--app-text-placeholder);
   }
 
   /* Select */
@@ -178,6 +244,10 @@ h1, h2, h3, h4, h5, h6 {
     background: #eff6ff;
     color: #2563eb;
     font-weight: 500;
+  }
+  .dark .nav-item-active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
   }
 
   /* Badge */
@@ -230,9 +300,9 @@ h1, h2, h3, h4, h5, h6 {
     -webkit-appearance: none;
     width: 15px;
     height: 15px;
-    border: 1.5px solid #d1d5db;
+    border: 1.5px solid var(--app-border);
     border-radius: 4px;
-    background: #ffffff;
+    background: var(--app-surface);
     cursor: pointer;
     position: relative;
     transition: all 0.12s ease;

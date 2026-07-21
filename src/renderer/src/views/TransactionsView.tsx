@@ -39,14 +39,14 @@ export const TransactionsView: React.FC = () => {
     {
       accessorKey: 'date',
       header: ({ column }) => (
-        <button onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="flex items-center gap-1 hover:text-gray-700 transition-colors">
+        <button onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
           <span>日期</span><ArrowUpDown className="w-3 h-3" />
         </button>
       ),
       cell: (info) => (
         <div className="leading-tight">
-          <span className="font-mono text-[12px] text-gray-700 tabular-nums">{String(info.getValue()).slice(0, 10)}</span>
-          <span className="font-mono text-[10px] text-gray-400 tabular-nums block">{String(info.getValue()).slice(11, 16)}</span>
+          <span className="font-mono text-[12px] text-gray-700 dark:text-gray-300 tabular-nums">{String(info.getValue()).slice(0, 10)}</span>
+          <span className="font-mono text-[10px] text-gray-400 dark:text-gray-500 tabular-nums block">{String(info.getValue()).slice(11, 16)}</span>
         </div>
       ),
     },
@@ -57,11 +57,11 @@ export const TransactionsView: React.FC = () => {
         const tx = info.row.original
         return (
           <div className="max-w-[240px]">
-            <div className="text-[12px] text-gray-900 flex items-center gap-1.5">
+            <div className="text-[12px] text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
               <span className="truncate">{tx.payee}</span>
-              {tx.isRefund && <span className="badge bg-blue-50 text-blue-600">退款</span>}
+              {tx.isRefund && <span className="badge bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">退款</span>}
             </div>
-            {tx.notes && <div className="text-[10px] text-gray-400 truncate">{tx.notes}</div>}
+            {tx.notes && <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{tx.notes}</div>}
           </div>
         )
       },
@@ -84,13 +84,13 @@ export const TransactionsView: React.FC = () => {
       header: '账户',
       cell: (info) => {
         const acc = accounts.find((a) => a.id === String(info.getValue()))
-        return <span className="text-[12px] text-gray-500">{acc?.name || '默认'}</span>
+        return <span className="text-[12px] text-gray-500 dark:text-gray-400">{acc?.name || '默认'}</span>
       },
     },
     {
       accessorKey: 'amount',
       header: ({ column }) => (
-        <button onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="flex items-center gap-1 hover:text-gray-700 transition-colors ml-auto">
+        <button onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors ml-auto">
           <span>金额</span><ArrowUpDown className="w-3 h-3" />
         </button>
       ),
@@ -99,7 +99,7 @@ export const TransactionsView: React.FC = () => {
         const isExpense = tx.type === 'expense'
         return (
           <div className="text-right font-mono text-[13px] font-medium tabular-nums">
-            <span className={isExpense ? 'text-gray-900' : 'text-emerald-600'}>
+            <span className={isExpense ? 'text-gray-900 dark:text-gray-100' : 'text-emerald-600 dark:text-emerald-400'}>
               {isExpense ? '−' : '+'}{formatCentsToYuan(tx.amount).replace('¥', '')}
             </span>
           </div>
@@ -166,25 +166,25 @@ export const TransactionsView: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-[16px] font-semibold text-gray-900">交易明细</h2>
-          <p className="text-[11px] text-gray-400 mt-0.5">共 {filteredData.length} 笔{hasFilters && ' · 已筛选'}</p>
+          <h2 className="text-[16px] font-semibold text-gray-900 dark:text-gray-100">交易明细</h2>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">共 {filteredData.length} 笔{hasFilters && ' · 已筛选'}</p>
         </div>
         <button onClick={handleExport} className="btn-secondary px-3 py-1.5 rounded-md text-[12px] flex items-center gap-1.5">
-          <Download className="w-3.5 h-3.5 text-gray-500" /><span>导出</span>
+          <Download className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" /><span>导出</span>
         </button>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-xs">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="text" placeholder="搜索商户或备注" value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input-field w-full rounded-md pl-8 pr-3 py-1.5 text-[12px]"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
               <X className="w-3 h-3" />
             </button>
           )}
@@ -200,7 +200,7 @@ export const TransactionsView: React.FC = () => {
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         {hasFilters && (
-          <button onClick={() => { setSearch(''); setTypeFilter('all'); setCategoryFilter('all') }} className="btn-ghost px-2 py-1.5 rounded-md text-gray-400 hover:text-gray-600">
+          <button onClick={() => { setSearch(''); setTypeFilter('all'); setCategoryFilter('all') }} className="btn-ghost px-2 py-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
             <X className="w-3.5 h-3.5" />
           </button>
         )}
@@ -208,8 +208,8 @@ export const TransactionsView: React.FC = () => {
 
       {/* Batch bar */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-100 rounded-md text-[12px] animate-fade-in">
-          <span className="text-blue-700 font-medium flex items-center gap-1.5">
+        <div className="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-md text-[12px] animate-fade-in">
+          <span className="text-blue-700 dark:text-blue-300 font-medium flex items-center gap-1.5">
             <CheckSquare className="w-3.5 h-3.5" />已选 {selectedIds.length} 笔
           </span>
           <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export const TransactionsView: React.FC = () => {
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <button onClick={handleBatchCategory} disabled={!batchCategory} className="btn-primary px-2.5 py-1 rounded text-[11px] disabled:opacity-40">应用</button>
-            <button onClick={handleBatchDelete} className="px-2.5 py-1 rounded text-[11px] text-red-600 bg-red-50 hover:bg-red-100 transition-colors flex items-center gap-1">
+            <button onClick={handleBatchDelete} className="px-2.5 py-1 rounded text-[11px] text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 transition-colors flex items-center gap-1">
               <Trash2 className="w-3 h-3" />删除
             </button>
           </div>
@@ -229,7 +229,7 @@ export const TransactionsView: React.FC = () => {
       <div className="flex-1 card overflow-hidden flex flex-col min-h-0">
         <div className="overflow-y-auto flex-1">
           <table className="w-full text-left">
-            <thead className="sticky top-0 bg-gray-50/80 backdrop-blur-sm text-gray-500 text-[11px] uppercase tracking-wide border-b border-gray-100">
+            <thead className="sticky top-0 bg-gray-50/80 dark:bg-[#161a23]/80 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-[11px] uppercase tracking-wide border-b border-gray-100 dark:border-[#232838]">
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id}>
                   {hg.headers.map((h) => (
@@ -240,11 +240,11 @@ export const TransactionsView: React.FC = () => {
                 </tr>
               ))}
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-[#1d212c]">
               {table.getRowModel().rows.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-16 text-center">
-                    <div className="flex flex-col items-center gap-2 text-gray-300">
+                    <div className="flex flex-col items-center gap-2 text-gray-300 dark:text-gray-600">
                       <Receipt className="w-8 h-8" strokeWidth={1.5} />
                       <span className="text-[13px]">{hasFilters ? '没有符合条件的交易' : '还没有交易记录'}</span>
                     </div>
@@ -257,7 +257,7 @@ export const TransactionsView: React.FC = () => {
                     <tr
                       key={row.id}
                       onClick={() => setSelectedTransaction(row.original)}
-                      className={`cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}
+                      className={`cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/60 dark:bg-blue-500/10' : 'hover:bg-gray-50 dark:hover:bg-[#1d212c]'}`}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td key={cell.id} className="px-4 py-2.5">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
