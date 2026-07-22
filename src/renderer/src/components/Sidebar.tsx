@@ -5,6 +5,7 @@ import {
   FileUp,
   Wallet,
   Tags,
+  Target,
   Settings,
   Plus,
   ShieldCheck,
@@ -22,6 +23,7 @@ const navItems: { id: ActiveTab; label: string; icon: LucideIcon; badge?: number
   { id: 'import', label: '导入', icon: FileUp },
   { id: 'accounts', label: '账户', icon: Wallet },
   { id: 'categories', label: '分类', icon: Tags },
+  { id: 'budget', label: '预算', icon: Target },
   { id: 'settings', label: '设置', icon: Settings },
 ]
 

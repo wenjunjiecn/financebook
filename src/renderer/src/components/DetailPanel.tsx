@@ -8,7 +8,7 @@ import { formatCentsToYuan } from '../utils/formatters'
 import type { TransactionType } from '../../../shared/types'
 
 export const DetailPanel: React.FC = () => {
-  const { selectedTransaction, setSelectedTransaction, categories, accounts, updateTransaction, deleteTransaction } = useAppStore()
+  const { selectedTransaction, setSelectedTransaction, categories, accounts, updateTransaction, deleteTransactions } = useAppStore()
   const toast = useToast()
 
   const [draft, setDraft] = useState(selectedTransaction)
@@ -54,7 +54,7 @@ export const DetailPanel: React.FC = () => {
   const handleDelete = async () => {
     const ok = await toast.confirm('删除交易', '确定删除此交易？此操作不可撤销。')
     if (ok) {
-      await deleteTransaction([draft.id])
+      await deleteTransactions([draft.id])
       setSelectedTransaction(null)
       toast.success('已删除', '该交易已删除')
     }
@@ -89,7 +89,7 @@ export const DetailPanel: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat?.color || '#94a3b8' }} />
               {cat?.name || '未分类'}
             </span>
-            <span className="badge bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400">{draft.source === 'wechat' ? '微信' : draft.source === 'alipay' ? '支付宝' : draft.source === 'manual' ? '手动' : draft.source}</span>
+            <span className="badge bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400">{draft.source === 'wechat_csv' ? '微信' : draft.source === 'alipay_csv' ? '支付宝' : draft.source === 'manual' ? '手动' : draft.source === 'ai_image' ? 'AI识图' : draft.source}</span>
           </div>
         </div>
 

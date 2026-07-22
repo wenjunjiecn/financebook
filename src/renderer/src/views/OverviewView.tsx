@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -11,12 +11,31 @@ import {
   Cell,
   CartesianGrid,
 } from 'recharts'
-import { TrendingDown, TrendingUp, Scale, PieChart as PieIcon } from 'lucide-react'
+import { TrendingDown, TrendingUp, Scale, PieChart as PieIcon, Sparkles, RefreshCw, ChevronDown, ChevronUp, Target, AlertTriangle } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { formatCentsToYuan } from '../utils/formatters'
 
 export const OverviewView: React.FC = () => {
-  const { transactions, categories } = useAppStore()
+  const { transactions, categories, apiKey, aiInsights, aiInsightsLoading, generateAiInsights, budgets } = useAppStore()
+  const [insightsExpanded, setInsightsExpanded] = useState(true)
+
+  const budgetProgress = useMemo(() => {
+    if (budgets.length === 0) return []
+    const now = new Date()
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const monthStart = `${yearMonth}-01 00:00:00`
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const monthEnd = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01 00:00:00`
+
+    return budgets.map((b) => {
+      const cat = categories.find((c) => c.id === b.categoryId)
+      const spent = transactions
+        .filter((t) => t.type === 'expense' && t.categoryId === b.categoryId && t.date >= monthStart && t.date < monthEnd)
+        .reduce((sum, t) => sum + t.amount, 0)
+      const pct = b.monthlyLimit > 0 ? (spent / b.monthlyLimit) * 100 : 0
+      return { ...b, categoryName: cat?.name || '未分类', color: cat?.color || '#94a3b8', spent, pct }
+    })
+  }, [budgets, categories, transactions])
 
   const stats = useMemo(() => {
     let totalExpense = 0
@@ -119,6 +138,101 @@ export const OverviewView: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* AI Insights Card */}
+        {apiKey && (
+          <div className="card overflow-hidden animate-slide-up" style={{ animationDelay: '120ms' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#232838]">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-amber-50 dark:bg-amber-500/10">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+                <h3 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">AI 财务洞察</h3>
+                {aiInsights && !aiInsightsLoading && (
+                  <button
+                    onClick={() => setInsightsExpanded(!insightsExpanded)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  >
+                    {insightsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={generateAiInsights}
+                disabled={aiInsightsLoading}
+                className="text-[11px] flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20 transition-colors disabled:opacity-40"
+              >
+                <RefreshCw className={`w-3 h-3 ${aiInsightsLoading ? 'animate-spin' : ''}`} />
+                {aiInsightsLoading ? '生成中...' : aiInsights ? '重新生成' : '生成本月报告'}
+              </button>
+            </div>
+            {insightsExpanded && (
+              <div className="p-4">
+                {aiInsightsLoading ? (
+                  <div className="flex items-center gap-3 py-6 justify-center">
+                    <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+                    <span className="text-[12px] text-gray-400 dark:text-gray-500">正在分析您的财务数据...</span>
+                  </div>
+                ) : aiInsights ? (
+                  <div className="text-[12px] text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                    {aiInsights}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center py-6 gap-2">
+                    <Sparkles className="w-5 h-5 text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
+                    <p className="text-[12px] text-gray-400 dark:text-gray-500">点击「生成本月报告」获取 AI 财务分析</p>
+                    <p className="text-[10px] text-gray-300 dark:text-gray-600">AI 将分析您的收支趋势、消费结构并给出建议</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Budget Progress */}
+        {budgetProgress.length > 0 && (
+          <div className="card p-4 animate-slide-up" style={{ animationDelay: '130ms' }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[13px] font-medium text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                预算进度
+              </h3>
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
+                {budgetProgress.filter((b) => b.pct > 100).length > 0 && (
+                  <span className="text-red-500 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />{budgetProgress.filter((b) => b.pct > 100).length} 项超支
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="space-y-2.5">
+              {budgetProgress.slice(0, 5).map((b) => (
+                <div key={b.id}>
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: b.color }} />
+                      <span className="text-gray-600 dark:text-gray-300">{b.categoryName}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`tabular-nums font-medium ${b.pct > 100 ? 'text-red-500' : b.pct > 80 ? 'text-amber-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {b.pct.toFixed(0)}%
+                      </span>
+                      <span className="text-gray-400 dark:text-gray-500 tabular-nums">
+                        {formatCentsToYuan(b.spent)} / {formatCentsToYuan(b.monthlyLimit)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-gray-100 dark:bg-[#1d212c] overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${b.pct > 100 ? 'bg-red-500' : b.pct > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(b.pct, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Charts */}
         <div className="grid grid-cols-3 gap-3">

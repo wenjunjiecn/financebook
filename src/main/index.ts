@@ -15,11 +15,22 @@ import {
   saveCsvTemplateService,
   getCategoryRulesService,
   saveCategoryRuleService,
+  getBudgetsService,
+  saveBudgetService,
+  deleteBudgetService,
   getDbPath,
   closeDatabase,
 } from './db/client'
 import { setApiKeyService, getApiKeyService, hasApiKeyService } from './services/safeStorage'
-import { recognizeReceiptService } from './services/aiService'
+import {
+  recognizeReceiptService,
+  categorizeTransactionsService,
+  parseTextTransactionService,
+  generateInsightsService,
+  detectAnomaliesService,
+  suggestBudgetsService,
+  chatService,
+} from './services/aiService'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -68,6 +79,10 @@ function setupIpcHandlers() {
 
   ipcMain.handle('db:getCategoryRules', () => getCategoryRulesService())
   ipcMain.handle('db:saveCategoryRule', (_, rule) => saveCategoryRuleService(rule))
+
+  ipcMain.handle('db:getBudgets', (_, period) => getBudgetsService(period))
+  ipcMain.handle('db:saveBudget', (_, budget) => saveBudgetService(budget))
+  ipcMain.handle('db:deleteBudget', (_, id) => deleteBudgetService(id))
 
   // SafeStorage IPC
   ipcMain.handle('safeStorage:setApiKey', (_, name, val) => setApiKeyService(name, val))
@@ -128,6 +143,30 @@ function setupIpcHandlers() {
   // AI IPC
   ipcMain.handle('ai:recognizeReceipt', (_, base64Image, apiKey, baseUrl) =>
     recognizeReceiptService(base64Image, apiKey, baseUrl)
+  )
+
+  ipcMain.handle('ai:categorizeTransactions', (_, items, categories, apiKey, baseUrl) =>
+    categorizeTransactionsService(items, categories, apiKey, baseUrl)
+  )
+
+  ipcMain.handle('ai:parseTextTransaction', (_, text, apiKey, baseUrl) =>
+    parseTextTransactionService(text, apiKey, baseUrl)
+  )
+
+  ipcMain.handle('ai:generateInsights', (_, context, apiKey, baseUrl) =>
+    generateInsightsService(context, apiKey, baseUrl)
+  )
+
+  ipcMain.handle('ai:detectAnomalies', (_, items, recentHistory, apiKey, baseUrl) =>
+    detectAnomaliesService(items, recentHistory, apiKey, baseUrl)
+  )
+
+  ipcMain.handle('ai:suggestBudgets', (_, categoryStats, apiKey, baseUrl) =>
+    suggestBudgetsService(categoryStats, apiKey, baseUrl)
+  )
+
+  ipcMain.handle('ai:chat', (_, message, history, context, apiKey, baseUrl) =>
+    chatService(message, history, context, apiKey, baseUrl)
   )
 }
 

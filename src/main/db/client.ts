@@ -5,7 +5,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import * as schema from './schema'
 import { eq, desc, and, gte, lte, like } from 'drizzle-orm'
-import type { Transaction, Category, Account, CsvTemplate, CategoryRule, TransactionType } from '../../shared/types'
+import type { Transaction, Category, Account, CsvTemplate, CategoryRule, TransactionType, Budget } from '../../shared/types'
 
 let dbInstance: ReturnType<typeof drizzle> | null = null
 let sqliteDb: Database.Database | null = null
@@ -74,6 +74,14 @@ export function initDatabase() {
       keyword TEXT NOT NULL,
       category_id TEXT NOT NULL,
       priority INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS budgets (
+      id TEXT PRIMARY KEY,
+      category_id TEXT NOT NULL,
+      monthly_limit INTEGER NOT NULL,
+      period TEXT NOT NULL,
+      created_at TEXT NOT NULL
     );
   `)
 
@@ -333,4 +341,43 @@ export async function saveCategoryRuleService(rule: Omit<CategoryRule, 'id'>): P
   const item: CategoryRule = { ...rule, id }
   db.insert(schema.categoryRules).values(item).run()
   return item
+}
+
+export async function getBudgetsService(period?: string): Promise<Budget[]> {
+  const db = getDb()
+  if (period) {
+    return db.select().from(schema.budgets).where(eq(schema.budgets.period, period)).all()
+  }
+  return db.select().from(schema.budgets).all()
+}
+
+export async function saveBudgetService(budget: Omit<Budget, 'id' | 'createdAt'>): Promise<Budget> {
+  const db = getDb()
+  // 如果同一分类 + 同一周期已有预算，则更新
+  const existing = db
+    .select()
+    .from(schema.budgets)
+    .where(and(eq(schema.budgets.categoryId, budget.categoryId), eq(schema.budgets.period, budget.period)))
+    .all()
+
+  if (existing.length > 0) {
+    const updated = { ...existing[0], monthlyLimit: budget.monthlyLimit }
+    db.update(schema.budgets)
+      .set({ monthlyLimit: budget.monthlyLimit })
+      .where(eq(schema.budgets.id, existing[0].id))
+      .run()
+    return updated
+  }
+
+  const id = `bud_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+  const createdAt = new Date().toISOString()
+  const item: Budget = { ...budget, id, createdAt }
+  db.insert(schema.budgets).values(item).run()
+  return item
+}
+
+export async function deleteBudgetService(id: string): Promise<boolean> {
+  const db = getDb()
+  db.delete(schema.budgets).where(eq(schema.budgets.id, id)).run()
+  return true
 }

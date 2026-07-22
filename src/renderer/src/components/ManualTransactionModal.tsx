@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { X, CheckCircle2, DollarSign, Calendar, Tag, Wallet, FileText, ArrowLeftRight } from 'lucide-react'
+import { X, CheckCircle2, DollarSign, Calendar, Tag, Wallet, FileText, ArrowLeftRight, Sparkles, Send } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useToast } from './Toast'
 
@@ -30,12 +30,15 @@ const typeOptions = [
 ] as const
 
 export const ManualTransactionModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
-  const { categories, accounts, saveManualTransaction } = useAppStore()
+  const { categories, accounts, saveManualTransaction, apiKey, parseTextToTransaction } = useAppStore()
   const toast = useToast()
+
+  const [aiInput, setAiInput] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
 
   const todayStr = new Date().toISOString().replace('T', ' ').substring(0, 19)
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       amountYuan: '', type: 'expense', payee: '',
@@ -47,6 +50,38 @@ export const ManualTransactionModal: React.FC<ModalProps> = ({ isOpen, onClose }
   const watchedType = watch('type')
 
   if (!isOpen) return null
+
+  const handleAiParse = async () => {
+    if (!aiInput.trim()) return
+    if (!apiKey) {
+      toast.error('未配置 API Key', '请先在系统设置中配置大模型 API Key')
+      return
+    }
+    setAiLoading(true)
+    try {
+      const parsed = await parseTextToTransaction(aiInput.trim())
+      if (parsed) {
+        // 匹配分类
+        const matchedCat = categories.find(
+          (c) => c.name.includes(parsed.categoryName) || parsed.categoryName.includes(c.name)
+        )
+        setValue('amountYuan', String(parsed.amountYuan))
+        setValue('type', parsed.type)
+        setValue('payee', parsed.payee)
+        setValue('categoryId', matchedCat?.id || categories[0]?.id || 'cat_food')
+        setValue('date', parsed.date)
+        setValue('notes', parsed.notes)
+        setAiInput('')
+        toast.success('AI 解析成功', `${parsed.payee} · ¥${parsed.amountYuan}`)
+      } else {
+        toast.error('解析失败', 'AI 无法解析输入内容，请重试')
+      }
+    } catch (err: any) {
+      toast.error('解析失败', err.message || String(err))
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const onSubmit = async (data: FormValues) => {
     const cents = Math.round(parseFloat(data.amountYuan) * 100)
@@ -79,6 +114,42 @@ export const ManualTransactionModal: React.FC<ModalProps> = ({ isOpen, onClose }
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-3.5 max-h-[70vh] overflow-y-auto">
+          {/* AI Natural Language Input */}
+          {apiKey && (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5 p-3 space-y-2">
+              <label className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                <Sparkles className="w-3.5 h-3.5" />
+                AI 自然语言记账
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAiParse()
+                    }
+                  }}
+                  placeholder="试试输入：今天午饭花了35"
+                  disabled={aiLoading}
+                  className="input-field flex-1 rounded-md px-3 py-2 text-[12px]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAiParse}
+                  disabled={aiLoading || !aiInput.trim()}
+                  className="px-3 py-2 rounded-md text-[12px] font-medium flex items-center gap-1.5 bg-amber-500 text-white hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-400 transition-colors disabled:opacity-40 shrink-0"
+                >
+                  <Send className={`w-3.5 h-3.5 ${aiLoading ? 'animate-pulse' : ''}`} />
+                  {aiLoading ? '解析中' : '解析'}
+                </button>
+              </div>
+              <p className="text-[10px] text-amber-600/70 dark:text-amber-500/70">输入描述后点击解析，AI 将自动填充下方表单</p>
+            </div>
+          )}
+
           {/* Type */}
           <div>
             <label className="block text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">交易类型</label>

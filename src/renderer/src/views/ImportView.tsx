@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Wallet,
   Upload,
+  Wand2,
+  ShieldAlert,
 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useToast } from '../components/Toast'
@@ -33,6 +35,7 @@ export const ImportView: React.FC = () => {
   const {
     candidates, setCandidates, updateCandidate, toggleCandidateSelected, toggleAllCandidatesSelected,
     commitImportCandidates, categories, accounts, templates, addCsvTemplate, apiKey, setActiveTab,
+    aiCategorizeCandidates, aiCategorizing, aiDetectAnomalies, aiAnomalyDetecting,
   } = useAppStore()
   const toast = useToast()
 
@@ -43,7 +46,8 @@ export const ImportView: React.FC = () => {
   const [templateName, setTemplateName] = useState('')
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
   const processFileContent = (content: string, mode: 'wechat' | 'alipay' | 'generic') => {
@@ -71,9 +75,18 @@ export const ImportView: React.FC = () => {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
-    const file = e.dataTransfer.files[0]
-    if (!file) return
-    if (activeImportMode === 'image' || file.type.startsWith('image/')) { handleImageFile(file); return }
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'))
+    if (activeImportMode === 'image' || imageFiles.length > 0) {
+      if (imageFiles.length > 1) {
+        handleBatchImageFiles(imageFiles)
+      } else {
+        handleImageFile(imageFiles[0])
+      }
+      return
+    }
+    const file = files[0]
     const reader = new FileReader()
     reader.onload = (event) => { const content = event.target?.result as string; if (content) processFileContent(content, activeImportMode as any) }
     reader.readAsText(file, 'utf-8')
@@ -84,7 +97,7 @@ export const ImportView: React.FC = () => {
     const reader = new FileReader()
     reader.onload = async (e) => {
       const base64 = e.target?.result as string
-      setImagePreview(base64)
+      setImagePreviews([base64])
       setAiLoading(true)
       const loadingId = toast.loading('识别中', '正在解析票据图片...')
       try {
@@ -105,6 +118,56 @@ export const ImportView: React.FC = () => {
       } finally { setAiLoading(false) }
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleBatchImageFiles = async (files: File[]) => {
+    if (!apiKey) { toast.error('未配置 API Key', '请先在系统设置中配置大模型 API Key'); setActiveTab('settings'); return }
+    const base64s: string[] = []
+    for (const file of files) {
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (e) => resolve(e.target?.result as string)
+        reader.readAsDataURL(file)
+      })
+      base64s.push(base64)
+    }
+    setImagePreviews(base64s)
+    setAiLoading(true)
+    setBatchProgress({ current: 0, total: files.length })
+    const loadingId = toast.loading('批量识别中', `0/${files.length} 张已识别...`)
+    const newCandidates: CandidateTransaction[] = []
+    try {
+      for (let i = 0; i < base64s.length; i++) {
+        setBatchProgress({ current: i + 1, total: files.length })
+        toast.dismiss(loadingId)
+        toast.loading('批量识别中', `${i + 1}/${files.length} 张识别中...`)
+        try {
+          const recognized = await window.electronAPI.ai.recognizeReceipt(base64s[i], apiKey)
+          const matchedCat = categories.find((c) => c.name.includes(recognized.categoryName || ''))?.id || 'cat_other_exp'
+          newCandidates.push({
+            tempId: `ai_${Date.now()}_${i}`, amount: recognized.amount, type: 'expense', categoryId: matchedCat,
+            accountId: accounts[0]?.id || 'acc_wechat', date: recognized.date, payee: recognized.payee,
+            notes: recognized.notes, paymentMethod: '图片识别', status: 'normal', source: 'ai_image',
+            isRefund: false, isSelected: true,
+          })
+        } catch (err) {
+          console.error(`Image ${i + 1} recognition failed:`, err)
+        }
+      }
+      toast.dismiss(loadingId)
+      if (newCandidates.length > 0) {
+        setCandidates(newCandidates)
+        toast.success('批量识别完成', `成功识别 ${newCandidates.length}/${files.length} 张票据`)
+      } else {
+        toast.error('识别失败', '所有图片均识别失败')
+      }
+    } catch (err: any) {
+      toast.dismiss(loadingId)
+      toast.error('批量识别错误', err.message || String(err))
+    } finally {
+      setAiLoading(false)
+      setBatchProgress(null)
+    }
   }
 
   const handleSaveTemplate = async () => {
@@ -197,8 +260,8 @@ export const ImportView: React.FC = () => {
           <div className={`p-3 rounded-xl mb-3 ${activeImportMode === 'image' ? 'bg-amber-50 dark:bg-amber-500/10' : 'bg-blue-50 dark:bg-blue-500/10'}`}>
             {activeImportMode === 'image' ? <ImageIcon className="w-6 h-6 text-amber-500" /> : <Upload className="w-6 h-6 text-blue-500" />}
           </div>
-          <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300">{activeImportMode === 'image' ? '拖入小票/截图，或点击选择' : '点击选择文件，或拖入此区域'}</p>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{activeImportMode === 'image' ? '支持 JPG / PNG 票据图片' : '支持 UTF-8 / GBK 编码 CSV'}</p>
+          <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300">{activeImportMode === 'image' ? '拖入小票/截图（支持多张），或点击选择' : '点击选择文件，或拖入此区域'}</p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{activeImportMode === 'image' ? '支持 JPG / PNG 票据图片，可批量识别' : '支持 UTF-8 / GBK 编码 CSV'}</p>
         </div>
 
         {/* AI Loading */}
@@ -206,19 +269,30 @@ export const ImportView: React.FC = () => {
           <div className="card p-4 flex items-center gap-3 animate-scale-in" style={{ borderColor: '#fcd34d' }}>
             <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10"><Sparkles className="w-4 h-4 text-amber-500 animate-spin" /></div>
             <div className="flex-1">
-              <p className="text-[12px] font-medium text-amber-700 dark:text-amber-400">图片识别中</p>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">正在解析票据信息...</p>
+              <p className="text-[12px] font-medium text-amber-700 dark:text-amber-400">{batchProgress ? '批量图片识别中' : '图片识别中'}</p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                {batchProgress ? `正在识别第 ${batchProgress.current}/${batchProgress.total} 张...` : '正在解析票据信息...'}
+              </p>
+              {batchProgress && (
+                <div className="mt-1.5 h-1 bg-amber-100 dark:bg-amber-500/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }} />
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Image Preview */}
-        {imagePreview && (
-          <div className="card p-3 flex items-center gap-4 animate-scale-in">
-            <img src={imagePreview} alt="preview" className="w-14 h-14 object-cover rounded-md border border-gray-200 dark:border-[#232838]" />
-            <div className="text-[12px]">
-              <span className="font-medium text-gray-900 dark:text-gray-100 block">已加载预览图片</span>
-              <span className="text-gray-400 dark:text-gray-500 text-[11px] mt-0.5 block">识别结果将在下方呈现，确认后入账</span>
+        {/* Image Previews */}
+        {imagePreviews.length > 0 && (
+          <div className="card p-3 animate-scale-in">
+            <div className="flex items-center gap-2 flex-wrap">
+              {imagePreviews.map((preview, idx) => (
+                <img key={idx} src={preview} alt={`preview-${idx}`} className="w-12 h-12 object-cover rounded-md border border-gray-200 dark:border-[#232838]" />
+              ))}
+              <div className="text-[12px] ml-2">
+                <span className="font-medium text-gray-900 dark:text-gray-100 block">已加载 {imagePreviews.length} 张预览图</span>
+                <span className="text-gray-400 dark:text-gray-500 text-[11px] mt-0.5 block">识别结果将在下方呈现，确认后入账</span>
+              </div>
             </div>
           </div>
         )}
@@ -233,6 +307,32 @@ export const ImportView: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => setCandidates([])} className="btn-secondary px-3 py-1.5 rounded-md text-[12px]">清空</button>
+                {apiKey && candidates.length > 0 && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        await aiCategorizeCandidates()
+                        toast.success('AI 分类完成', '已使用 AI 智能匹配分类')
+                      }}
+                      disabled={aiCategorizing || aiAnomalyDetecting}
+                      className="px-3 py-1.5 rounded-md text-[12px] font-medium flex items-center gap-1.5 bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 dark:hover:bg-amber-500/20 transition-colors disabled:opacity-40"
+                    >
+                      <Wand2 className={`w-3.5 h-3.5 ${aiCategorizing ? 'animate-spin' : ''}`} />
+                      {aiCategorizing ? 'AI 分类中...' : 'AI 智能分类'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await aiDetectAnomalies()
+                        toast.success('异常检测完成', 'AI 已检测候选交易中的异常项')
+                      }}
+                      disabled={aiCategorizing || aiAnomalyDetecting}
+                      className="px-3 py-1.5 rounded-md text-[12px] font-medium flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 dark:hover:bg-red-500/20 transition-colors disabled:opacity-40"
+                    >
+                      <ShieldAlert className={`w-3.5 h-3.5 ${aiAnomalyDetecting ? 'animate-spin' : ''}`} />
+                      {aiAnomalyDetecting ? '检测中...' : 'AI 异常检测'}
+                    </button>
+                  </>
+                )}
                 <button onClick={handleCommit} disabled={selectedCount === 0} className="btn-primary px-4 py-1.5 rounded-md text-[12px] font-medium flex items-center gap-1.5 disabled:opacity-40">
                   <Check className="w-3.5 h-3.5" />确认入账 {selectedCount} 笔
                 </button>
@@ -260,6 +360,8 @@ export const ImportView: React.FC = () => {
                         <td className="p-2.5">
                           {c.status === 'duplicate' ? (
                             <span className="badge bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400" title={c.duplicateMatchReason}><AlertTriangle className="w-2.5 h-2.5" />重复</span>
+                          ) : c.anomalyWarning ? (
+                            <span className="badge bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400" title={c.anomalyWarning}><ShieldAlert className="w-2.5 h-2.5" />异常</span>
                           ) : c.isRefund ? (
                             <span className="badge bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300"><RotateCcw className="w-2.5 h-2.5" />退款</span>
                           ) : (

@@ -19,6 +19,10 @@ const electronAPI: ElectronAPI = {
 
     getCategoryRules: () => ipcRenderer.invoke('db:getCategoryRules'),
     saveCategoryRule: (rule) => ipcRenderer.invoke('db:saveCategoryRule', rule),
+
+    getBudgets: (period) => ipcRenderer.invoke('db:getBudgets', period),
+    saveBudget: (budget) => ipcRenderer.invoke('db:saveBudget', budget),
+    deleteBudget: (id) => ipcRenderer.invoke('db:deleteBudget', id),
   },
 
   safeStorage: {
@@ -37,6 +41,12 @@ const electronAPI: ElectronAPI = {
 
   ai: {
     recognizeReceipt: (base64Image, apiKey, baseUrl) => ipcRenderer.invoke('ai:recognizeReceipt', base64Image, apiKey, baseUrl),
+    categorizeTransactions: (items, categories, apiKey, baseUrl) => ipcRenderer.invoke('ai:categorizeTransactions', items, categories, apiKey, baseUrl),
+    parseTextTransaction: (text, apiKey, baseUrl) => ipcRenderer.invoke('ai:parseTextTransaction', text, apiKey, baseUrl),
+    generateInsights: (context, apiKey, baseUrl) => ipcRenderer.invoke('ai:generateInsights', context, apiKey, baseUrl),
+    detectAnomalies: (items, recentHistory, apiKey, baseUrl) => ipcRenderer.invoke('ai:detectAnomalies', items, recentHistory, apiKey, baseUrl),
+    suggestBudgets: (categoryStats, apiKey, baseUrl) => ipcRenderer.invoke('ai:suggestBudgets', categoryStats, apiKey, baseUrl),
+    chat: (message, history, context, apiKey, baseUrl) => ipcRenderer.invoke('ai:chat', message, history, context, apiKey, baseUrl),
   },
 }
 

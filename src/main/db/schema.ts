@@ -50,3 +50,11 @@ export const categoryRules = sqliteTable('category_rules', {
   categoryId: text('category_id').notNull(),
   priority: integer('priority').notNull().default(0),
 })
+
+export const budgets = sqliteTable('budgets', {
+  id: text('id').primaryKey(),
+  categoryId: text('category_id').notNull(),
+  monthlyLimit: integer('monthly_limit').notNull(), // 单位：分
+  period: text('period').notNull(), // YYYY-MM
+  createdAt: text('created_at').notNull(),
+})

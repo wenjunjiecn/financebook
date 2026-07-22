@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react'
+import { MessageCircle } from 'lucide-react'
 import { Sidebar } from './components/Sidebar'
 import { DetailPanel } from './components/DetailPanel'
 import { ManualTransactionModal } from './components/ManualTransactionModal'
+import { ChatPanel } from './components/ChatPanel'
 import { ToastProvider } from './components/Toast'
 import { OverviewView } from './views/OverviewView'
 import { TransactionsView } from './views/TransactionsView'
 import { ImportView } from './views/ImportView'
 import { AccountsView } from './views/AccountsView'
 import { CategoriesView } from './views/CategoriesView'
+import { BudgetView } from './views/BudgetView'
 import { SettingsView } from './views/SettingsView'
 import { useAppStore } from './store/useAppStore'
 import { useTheme } from './hooks/useTheme'
 
 export const App: React.FC = () => {
-  const { activeTab, loadAllData } = useAppStore()
+  const { activeTab, loadAllData, chatOpen, setChatOpen, apiKey } = useAppStore()
   const [isManualModalOpen, setIsManualModalOpen] = useState(false)
   // 引入主题 hook，保证 DOM class 与用户偏好同步
   useTheme()
@@ -34,6 +37,8 @@ export const App: React.FC = () => {
         return <AccountsView />
       case 'categories':
         return <CategoriesView />
+      case 'budget':
+        return <BudgetView />
       case 'settings':
         return <SettingsView />
       default:
@@ -47,6 +52,7 @@ export const App: React.FC = () => {
     import: '导入',
     accounts: '账户',
     categories: '分类',
+    budget: '预算',
     settings: '设置',
   }
 
@@ -71,6 +77,20 @@ export const App: React.FC = () => {
         <DetailPanel />
 
         <ManualTransactionModal isOpen={isManualModalOpen} onClose={() => setIsManualModalOpen(false)} />
+
+        {/* Chat Panel */}
+        <ChatPanel />
+
+        {/* Chat floating button */}
+        {apiKey && !chatOpen && (
+          <button
+            onClick={() => setChatOpen(true)}
+            className="fixed bottom-6 right-6 z-30 w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg flex items-center justify-center hover:scale-105 transition-transform app-no-drag"
+            title="AI 聊天记账"
+          >
+            <MessageCircle className="w-5 h-5 text-white" />
+          </button>
+        )}
       </div>
     </ToastProvider>
   )
