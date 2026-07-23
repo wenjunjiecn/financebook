@@ -13,8 +13,9 @@
     "target": ["dmg", "zip"],
     "category": "public.app-category.finance",
     "artifactName": "${productName}-${version}-${arch}.${ext}",
-    "hardenedRuntime": true,
-    "gatekeeperAssess": false
+    "hardenedRuntime": false,
+    "gatekeeperAssess": false,
+    "identity": null
   },
   "asar": true
 }

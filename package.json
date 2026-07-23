@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "build:electron": "vite build",
+    "build:mac": "tsc --noEmit && vite build && electron-builder --mac",
+    "mac": "bash scripts/build-mac.sh",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
